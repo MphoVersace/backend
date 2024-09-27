@@ -4,6 +4,7 @@ const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 const session = require('express-session');
 const authRoutes = require('./routes/auth');
+const cors = require('cors'); 
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ connectDB();
 
 // Middleware for parsing JSON bodies
 app.use(express.json());
+
+// Enable CORS for all requests
+app.use(cors());
 
 // Session management
 app.use(
