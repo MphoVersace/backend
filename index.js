@@ -3,8 +3,6 @@ const express = require('express');
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 const session = require('express-session');
-const passport = require('passport');
-require('./config/passport'); // Import passport configurations
 const authRoutes = require('./routes/auth');
 
 dotenv.config();
@@ -26,9 +24,6 @@ app.use(
   })
 );
 
-// Initialize Passport and session
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Routes for authentication
 app.use('/api/auth', authRoutes);

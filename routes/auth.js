@@ -101,39 +101,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-// Google Authentication
-router.get(
-  '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
-
-// Google Callback
-router.get(
-  '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  (req, res) => {
-    // Successful authentication, redirect to the frontend or dashboard
-    res.redirect('/');
-  }
-);
-
-// LinkedIn Authentication
-router.get(
-  '/linkedin',
-  passport.authenticate('linkedin', { state: 'SOME STATE' })
-);
-
-// LinkedIn Callback
-router.get(
-  '/linkedin/callback',
-  passport.authenticate('linkedin', { failureRedirect: '/login' }),
-  (req, res) => {
-    // Successful authentication, redirect to the frontend or dashboard
-    res.redirect('/');
-  }
-);
-
 // Logout route
 router.get('/logout', (req, res) => {
   req.logout((err) => {
