@@ -1,40 +1,40 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const passport = require('passport');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-require('./config/passport')(passport);
 
+const express = require('express');
+const connectDB = require('./config/db');
+const dotenv = require('dotenv');
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passport'); // Import passport configurations
+const authRoutes = require('./routes/auth');
+
+dotenv.config();
 
 const app = express();
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+connectDB();
 
-// Body parser middleware
+// Middleware for parsing JSON bodies
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-// Express session
+// Session management
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
   })
 );
 
-// Passport middleware
+// Initialize Passport and session
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Set up routes (you'll define these in detail later)
-app.use('/auth', require('./routes/auth'));
+// Routes for authentication
+app.use('/api/auth', authRoutes);
 
-// Start server
+// Set the port from environment variables or default to 5000
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+// Start the server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

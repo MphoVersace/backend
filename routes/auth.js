@@ -1,73 +1,145 @@
+// routes/auth.js
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const passport = require('passport');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const passport = require('passport');
 
-// Local Signup
-router.post('/signup', async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
-
-  if (password !== confirmPassword) {
-    return res.status(400).json({ message: 'Passwords do not match' });
-  }
+// @route   POST /api/auth/register
+// @desc    Register a new user
+// @access  Public
+router.post('/register', async (req, res) => {
+  // Extract form data from the request body
+  const {
+    firstName,
+    middleName,
+    lastName,
+    email,
+    password,
+    gender,
+    dateOfBirth,
+    countryOfResidence,
+    role,
+  } = req.body;
 
   try {
+    // Check if the user already exists
     let user = await User.findOne({ email });
-
     if (user) {
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ msg: 'User already exists' });
     }
 
+    // Create a new user instance
     user = new User({
-      name,
+      firstName,
+      middleName,
+      lastName,
       email,
-      password: await bcrypt.hash(password, 10)
+      password,
+      gender,
+      dateOfBirth,
+      countryOfResidence,
+      role,
     });
 
+    // Save the user to the database
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+
+    // Generate JWT for user authentication
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
+    // Sign the JWT and send it back to the client
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token });
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
-// Local Login
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+// @route   POST /api/auth/login
+// @desc    Authenticate user and get token
+// @access  Public
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
 
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      res.status(200).json({ message: 'Login successful' });
+  try {
+    // Check if the user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    // Compare the password with the stored hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    // Generate JWT for user authentication
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
+    // Sign the JWT and send it back to the client
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token });
     });
-  })(req, res, next);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
 });
 
 
-// Google OAuth
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
-  res.redirect('/dashboard');
-});
+// Google Authentication
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-// Facebook OAuth
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
-router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), (req, res) => {
-  res.redirect('/dashboard');
-});
+// Google Callback
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Successful authentication, redirect to the frontend or dashboard
+    res.redirect('/');
+  }
+);
 
-// GitHub OAuth
-router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
-router.get('/github/callback', passport.authenticate('github', { failureRedirect: '/login' }), (req, res) => {
-  res.redirect('/dashboard');
-});
+// LinkedIn Authentication
+router.get(
+  '/linkedin',
+  passport.authenticate('linkedin', { state: 'SOME STATE' })
+);
 
-// LinkedIn OAuth
-router.get('/linkedin', passport.authenticate('linkedin'));
-router.get('/linkedin/callback', passport.authenticate('linkedin', { failureRedirect: '/login' }), (req, res) => {
-  res.redirect('/dashboard');
+// LinkedIn Callback
+router.get(
+  '/linkedin/callback',
+  passport.authenticate('linkedin', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Successful authentication, redirect to the frontend or dashboard
+    res.redirect('/');
+  }
+);
+
+// Logout route
+router.get('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    res.redirect('/');
+  });
 });
 
 module.exports = router;
