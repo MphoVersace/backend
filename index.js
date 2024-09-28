@@ -1,10 +1,11 @@
-const express = require("express");
-const connectDB = require("./config/db");
-const dotenv = require("dotenv");
-const session = require("express-session");
-const authRoutes = require("./routes/auth");
-const skillsRoutes = require("./routes/skills");
-const cors = require("cors");
+// index.js
+const express = require('express');
+const connectDB = require('./config/db');
+const dotenv = require('dotenv');
+const session = require('express-session');
+const authRoutes = require('./routes/auth');
+const cors = require('cors'); 
+const { generateFullReport } = require('./flaskApi'); // Import the new function
 
 dotenv.config();
 
@@ -29,12 +30,20 @@ app.use(
 );
 
 // Routes for authentication
-app.use("/api/auth", authRoutes);
+app.use('/api/auth', authRoutes);
 
-// Routes for skills
-app.use("/api/skills", skillsRoutes); // Add skills route
+// New route to get the full report (idea, plan, mentors)
+app.post('/api/generate-full-report', async (req, res) => {
+    const { skills } = req.body;
+    try {
+        const report = await generateFullReport(skills);
+        res.json(report);
+    } catch (error) {
+        res.status(500).send('Error generating full report.');
+    }
+});
 
-// Set the port from environment variables or default to 5000
+// Set the port from environment variables or default to 5001
 const PORT = process.env.PORT || 5001;
 
 // Start the server
