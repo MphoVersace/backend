@@ -1,10 +1,10 @@
-
-const express = require('express');
-const connectDB = require('./config/db');
-const dotenv = require('dotenv');
-const session = require('express-session');
-const authRoutes = require('./routes/auth');
-const cors = require('cors'); 
+const express = require("express");
+const connectDB = require("./config/db");
+const dotenv = require("dotenv");
+const session = require("express-session");
+const authRoutes = require("./routes/auth");
+const skillsRoutes = require("./routes/skills");
+const cors = require("cors");
 
 dotenv.config();
 
@@ -28,9 +28,11 @@ app.use(
   })
 );
 
-
 // Routes for authentication
-app.use('/api/auth', authRoutes);
+app.use("/api/auth", authRoutes);
+
+// Routes for skills
+app.use("/api/skills", skillsRoutes); // Add skills route
 
 // Set the port from environment variables or default to 5000
 const PORT = process.env.PORT || 5001;
